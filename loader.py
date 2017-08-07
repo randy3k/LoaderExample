@@ -1,21 +1,12 @@
 import sys
 import os
-import importlib
 from contextlib import contextmanager
-
-
-loader_details = [
-    (importlib.machinery.ExtensionFileLoader, importlib.machinery.EXTENSION_SUFFIXES),
-    (importlib.machinery.SourceFileLoader, importlib.machinery.SOURCE_SUFFIXES),
-    (importlib.machinery.SourcelessFileLoader, importlib.machinery.BYTECODE_SUFFIXES)
-]
 
 
 @contextmanager
 def intercepting_imports(module_names):
     deps_path = os.path.join(os.path.dirname(__file__), "deps")
-    finder = FilterFileFinder(module_names, deps_path, *loader_details)
-    sys.meta_path.insert(0, finder)
+    sys.path.insert(0, deps_path)
 
     # save the original modules to prevent overwritte modules of the same name
     original_modules = {}
@@ -27,8 +18,8 @@ def intercepting_imports(module_names):
     try:
         yield
     finally:
-        if finder in sys.meta_path:
-            sys.meta_path.remove(finder)
+        if deps_path in sys.path:
+            sys.path.remove(deps_path)
 
         # restore the original modules
         for m in module_names:
@@ -37,16 +28,6 @@ def intercepting_imports(module_names):
             else:
                 if m in sys.modules:
                     del sys.modules[m]
-
-
-class FilterFileFinder(importlib.machinery.FileFinder):
-    def __init__(self, module_names, path, *loader_details):
-        self._module_names = module_names
-        super().__init__(path, *loader_details)
-
-    def find_module(self, name, path=None):
-        if name in self._module_names:
-            return super().find_module(name)
 
 
 module_names = ["foo"]

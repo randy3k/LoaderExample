@@ -7,6 +7,7 @@ Structure
     |-- your_package.py
 |-- deps
     |-- foo
+    |-- bla.py
 |-- loader.py
 ```
 
